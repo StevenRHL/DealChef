@@ -8,12 +8,16 @@ ingredients into recipe ideas.
 
 ```bash
 npm install
-npm run dev
+npm run build
+npm run start
 ```
 
 The app runs in fixture mode by default so the hackathon demo works without
-external credentials. The intended local preview URL is printed by the dev
-server.
+external credentials. `npm run start` serves the production build at
+`http://localhost:3000`. On some machines (notably macOS) `npm run dev` can fail
+to start because the `workerd` binary the dev server depends on won't spawn
+(system error -88) — if you hit that, use `npm run build && npm run start`
+instead, which uses the same runtime without the dev-server-specific spawn path.
 
 ## Environment variables
 

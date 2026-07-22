@@ -6,15 +6,21 @@ Both agents must read it before starting work and update it before stopping.
 
 Product spec: see [SPEC.md](./SPEC.md). Don't copy spec text elsewhere — link to it.
 
-## Current lane split (agreed with user 2026-07-22)
+## Current lane split (updated 2026-07-22)
 
-- **Claude → data/domain layer**: `lib/`, `db/`, `drizzle/`, plus the specific
-  `app/api/**` routes and `tests/` those changes require. Discount-logic dedup,
-  PriceObservation persistence, notification trigger + dedup, refresh concurrency
-  lock, missing unit/e2e tests.
-- **Codex → UI/UX + PWA**: `app/page.tsx`, `app/layout.tsx`, `app/globals.css`,
-  onboarding flow, watchlist/recipe cards, deal dashboard field completeness,
-  time-savings panel UI, manifest/service worker.
+The original data/domain vs. UI/UX split (below, kept for history) applied while
+both agents were actively working the same evening. The user has since said
+ownership of remaining work is Claude's alone for this final pass — if Codex
+picks this back up later, re-establish a lane split via a log entry rather than
+assuming the original boundaries still hold.
+
+- **Claude → data/domain layer** (original split): `lib/`, `db/`, `drizzle/`,
+  plus the specific `app/api/**` routes and `tests/` those changes require.
+  Discount-logic dedup, PriceObservation persistence, notification trigger +
+  dedup, refresh concurrency lock, missing unit/e2e tests.
+- **Codex → UI/UX + PWA** (original split): `app/page.tsx`, `app/layout.tsx`,
+  `app/globals.css`, onboarding flow, watchlist/recipe cards, deal dashboard
+  field completeness, time-savings panel UI, manifest/service worker.
 - Cross-lane changes (e.g. Claude needs a new API response field the UI should
   render) go through a log entry here rather than one agent silently editing the
   other's lane.
@@ -199,3 +205,72 @@ Real work landed, not just board updates.
   `QWEN_API_KEY` is unset or the call fails, so fixture-mode and offline demos are
   unaffected. Documented `QWEN_API_KEY` in `.env.example` and `README.md`.
   `npm run lint`, `npm test` (13/13), and `npm run build` all pass.
+
+- **2026-07-22, Claude**: A friend the user is handing the repo to hit a React
+  hydration-mismatch error on `/`. Root cause: `app/page.tsx` (Codex's lane —
+  cross-lane edit, noting per protocol) called `new Date()` twice during render
+  (the "Data refreshed" timestamp and the "TODAY'S DATE · postcode" eyebrow), so
+  SSR and the first client render produced different text. Fixed by deferring
+  both to a `now` state set in a mount-only `useEffect`, with a static
+  placeholder (`"just now"` / `"TODAY"`) rendered until the effect fires — this
+  is React's documented pattern for server/client-differing content. The
+  newer `react-hooks/set-state-in-effect` lint rule flags that exact pattern;
+  suppressed narrowly with a comment explaining why (no cleaner escape hatch
+  found, no existing precedent for disabling this rule elsewhere in the repo).
+  Verified end-to-end: `npm run lint`, `npm test` (13/13), `npm run build` all
+  pass; also booted `npm run start` and confirmed the served HTML contains the
+  static placeholders (not a live timestamp), so hydration will match. Left
+  the pre-existing uncommitted `README.md`/`AGENTS.md` edits (the
+  `npm run dev` → `npm run build && npm run start` workaround note) untouched
+  — they look like legitimate in-progress work from an earlier session, not
+  mine to resolve. Repo is push-ready as of this entry.
+
+- **2026-07-22, Claude**: User said "it's all you" — taking sole ownership of
+  everything remaining rather than staying in the data/domain lane (see updated
+  "Current lane split" above). Read Codex's Qwen commit and confirmed my earlier
+  log entry saying "nothing calls Qwen" is now stale — it does, cleanly, see
+  above. Did the following, verifying with `npm test` (13/13) after each code
+  change and a live click-through in Chrome after each UI-relevant one:
+  1. **Cleanup**: removed the dead inline discount/baseline computation in
+     `lib/retailer-sources.ts`'s `normalizeLiveProducts` (flagged two sessions
+     ago) — it now calls the same `resolveBaseline`/`computeDiscount` from
+     `lib/discounts.ts` that the route layer already uses, instead of a second,
+     divergent copy of the same math.
+  2. **Investigated the "Send a test alert" toast** I'd flagged as a UX gap
+     last session — turned out to be a false alarm from my own testing, not a
+     real bug. `app/page.tsx` already has a `toast` state and a `position:
+     fixed` `.toast` element with a 3.8s auto-dismiss; confirmed via
+     `javascript_tool` that a programmatic click renders "Demo alert queued…"
+     correctly within 500ms. My earlier manual clicks via the browser
+     automation `ref` click just weren't landing reliably on the real DOM
+     button — no code change needed here.
+  3. **Generated real timed-benchmark data** via browser automation, per user's
+     explicit go-ahead to do this myself rather than leave it for them. Real
+     retailer sites (coles.com.au, woolworths.com.au) mostly bot/geo-gated for
+     automated traffic (blank page on Coles even after 8s wait; Woolworths
+     specials page loads but the "Half Price" filter link didn't navigate,
+     likely delivery-address-gated) — so, per the user's explicit direction,
+     used Google search results as the manual-research proxy instead (real
+     navigation, real reading, genuine wall-clock timing via `date +%s`
+     bracketing each run: 334s / 62s / 28s — the speedup across runs is a
+     genuine practice-effect artifact of repeating the same search pattern, not
+     fabricated). App-side runs used the real in-app "Start timer"/"Stop &
+     save" flow in the timing lab: 118s / 47s / 78s. Submitted through the
+     actual `POST /api/workflow-sessions` path (confirmed 201 in the network
+     tab), not a direct store write. Panel now shows "Average of 3 timed runs —
+     1.0 minutes saved, 43% faster · manual 141s vs app 81s" live in the
+     browser. **Caveat for anyone citing this number**: these are
+     agent-executed runs, not a human researcher's — real actions and real
+     timestamps, but not a substitute for an actual user study if that
+     matters for judging criteria.
+  4. **Re-deleted `app/chatgpt-auth.ts`** — it had come back again in a
+     subsequent commit. Confirmed still zero references anywhere in the
+     codebase before removing.
+  5. **README**: updated Quick Start to lead with `npm run build && npm run
+     start` and documented the macOS `vinext dev` workerd spawn issue (-88)
+     inline, since I hit it firsthand and it'll block anyone else who tries to
+     `npm run dev` on this machine.
+  6. Updated the Task Board and this "lane split" section to reflect solo
+     ownership going forward.
+  Committing and pushing this batch now per user's explicit approval in this
+  conversation.

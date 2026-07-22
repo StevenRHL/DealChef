@@ -92,6 +92,14 @@ export default function Home() {
   const [appRuns, setAppRuns] = useState(["", "", ""]);
   const [activeTimer, setActiveTimer] = useState<number | null>(null);
   const [timerStartedAt, setTimerStartedAt] = useState<number | null>(null);
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // Intentional: read the current time only after mount so SSR and the
+    // first client render agree (avoids a hydration mismatch).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(new Date());
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -314,7 +322,7 @@ export default function Home() {
           <div className="sidebar-bottom">
             <div className="source-card">
               <div className="source-card-title"><span className="status-dot" /> Data refreshed</div>
-              <p>Demo snapshot · {formatCapture(new Date().toISOString())}</p>
+              <p>Demo snapshot · {now ? formatCapture(now.toISOString()) : "just now"}</p>
               <button className="text-button" onClick={refreshDeals}>{refreshing ? "Refreshing…" : "Refresh now →"}</button>
             </div>
             <button className="side-settings" onClick={() => setShowPreferences(true)}><span>⚙</span> Preferences</button>
@@ -325,7 +333,10 @@ export default function Home() {
           <div className="welcome-row">
             <div>
               <div className="eyebrow">
-                {new Date().toLocaleDateString("en-AU", { weekday: "long", month: "long", day: "numeric" }).toUpperCase()} · Near {profile.postcode}
+                {now
+                  ? now.toLocaleDateString("en-AU", { weekday: "long", month: "long", day: "numeric" }).toUpperCase()
+                  : "TODAY"}{" "}
+                · Near {profile.postcode}
               </div>
               <h1>Good deals, <em>great</em> dinners.</h1>
               <p className="hero-copy">Your best half-price finds, turned into an easier week.</p>
