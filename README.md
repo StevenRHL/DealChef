@@ -6,18 +6,31 @@ ingredients into recipe ideas.
 
 ## Quick start
 
+Requires Node.js `>=22.13.0` (`node -v` to check).
+
 ```bash
 npm install
 npm run build
 npm run start
 ```
 
+Then open `http://localhost:3000`.
+
 The app runs in fixture mode by default so the hackathon demo works without
-external credentials. `npm run start` serves the production build at
-`http://localhost:3000`. On some machines (notably macOS) `npm run dev` can fail
-to start because the `workerd` binary the dev server depends on won't spawn
-(system error -88) — if you hit that, use `npm run build && npm run start`
-instead, which uses the same runtime without the dev-server-specific spawn path.
+external credentials.
+
+### Troubleshooting
+
+- **`sh: vinext: command not found`** — `npm install` didn't complete (or wasn't
+  run) before `npm run build`/`npm run start`. `vinext` is installed as a
+  dependency into `node_modules/.bin`, not a global tool. Run `npm install`
+  first and check it finishes without errors; if `node_modules` may be
+  corrupted from a previous interrupted install, run
+  `rm -rf node_modules package-lock.json && npm install` and try again.
+- **`npm run dev` fails to start** — on some machines (notably macOS) the dev
+  server's `workerd` binary won't spawn (system error -88). Use
+  `npm run build && npm run start` instead, which uses the same runtime
+  without the dev-server-specific spawn path.
 
 ## Environment variables
 
