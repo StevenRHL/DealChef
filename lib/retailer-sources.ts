@@ -1,4 +1,5 @@
 import { getFixtureDeals } from "./deals";
+import { computeDiscount, resolveBaseline } from "./discounts";
 import type { Deal, NormalizedProduct, Retailer } from "./types";
 
 function cleanNumber(value: unknown) {
@@ -37,16 +38,19 @@ function wrapProducts(retailer: Retailer, payload: unknown) {
 
 function normalizeLiveProducts(products: NormalizedProduct[]) {
   return products.map((product) => {
-    const baseline = product.was_price && product.was_price > product.current_price ? product.was_price : null;
-    const discount = baseline ? ((baseline - product.current_price) / baseline) * 100 : 0;
+    // First-pass baseline only — the route layer re-resolves this against real
+    // PriceObservation history via applyHistoricalBaselines (lib/deals.ts), which
+    // is the single source of truth for discount_percent/baseline_source/confidence.
+    const { baseline, source } = resolveBaseline(product.current_price, product.was_price, []);
+    const discount = computeDiscount(product.current_price, baseline);
     return {
       ...product,
       id: `${product.retailer}:${product.external_id}`,
-      discount_percent: Math.round(discount * 10) / 10,
-      baseline_source: baseline ? "retailer_was_price" : "insufficient_history",
+      discount_percent: discount,
+      baseline_source: source,
       unit_price_label: product.unit_price ? `$${product.unit_price.toFixed(2)} / unit` : "unit price unavailable",
       image_emoji: product.retailer === "aldi" ? "🛒" : product.retailer === "coles" ? "🥕" : "🍎",
-      confidence: baseline && discount >= 50 ? "verified" : "unverified",
+      confidence: discount >= 50 ? "verified" : "unverified",
     } satisfies Deal;
   });
 }
