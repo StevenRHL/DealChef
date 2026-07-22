@@ -324,7 +324,9 @@ export default function Home() {
         <section className="content-area">
           <div className="welcome-row">
             <div>
-              <div className="eyebrow">SATURDAY, JULY 25 · {profile.postcode}</div>
+              <div className="eyebrow">
+                {new Date().toLocaleDateString("en-AU", { weekday: "long", month: "long", day: "numeric" }).toUpperCase()} · Near {profile.postcode}
+              </div>
               <h1>Good deals, <em>great</em> dinners.</h1>
               <p className="hero-copy">Your best half-price finds, turned into an easier week.</p>
             </div>

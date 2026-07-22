@@ -81,3 +81,12 @@ The Time Saved panel uses the fixed task of finding five half-price products,
 saving two, and finding a recipe using three ingredients. It only displays a
 benchmark after three manual runs and three DealChef runs have been recorded,
 labelled “Average of 3 timed runs”.
+
+## Hackathon deliverables
+
+- Live demo: https://dealchef-grocery-planner.stevenrhl.chatgpt.site
+- Presentation deck: `outputs/dealchef-hackathon-deck.pptx`
+
+The deck follows the same reproducible timing rule: it shows the measurement
+method and a pending state until all six timed runs have been recorded in the
+app.
