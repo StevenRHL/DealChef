@@ -74,7 +74,7 @@ Status values: `todo`, `in_progress`, `blocked`, `done`.
 | Notifications | Email via Resend + demo fallback | — | done | `app/api/notifications/email/route.ts` |
 | Notifications | Test alert button/endpoint | — | done | `app/api/notifications/test/route.ts` |
 | Notifications | Dedup by `session_id + watchlist_item_id + deal_observation_id` | Codex | done | refresh compares watched half-price deals and deduplicates alert keys |
-| Notifications | Push (stretch): VAPID, service worker, subscription renewal/cleanup | Codex | in_progress | service worker and subscription storage are present; VAPID delivery remains stretch |
+| Notifications | Push (stretch): VAPID, service worker, subscription renewal/cleanup | — | out-of-scope | descoped for this submission 2026-07-22 — email alerts satisfy the must-have; API endpoint/service worker file are left as-is, inert, not wired up further |
 | Recipes | Spoonacular integration + local fixture fallback | — | done | `lib/recipes.ts` |
 | Recipes | `GET /api/recommendations` wired to profile pantry + selected deals | — | done | |
 | Time-savings | `WorkflowSession` schema + `POST /api/workflow-sessions` | Codex | done | endpoint validates `session_id` against the signed cookie |
@@ -88,7 +88,7 @@ Status values: `todo`, `in_progress`, `blocked`, `done`.
 | Testing (stretch) | Adapter fixtures, rate-limit/malformed-price tests | Claude | done | `tests/stretch.test.mjs` — malformed rows dropped, per-retailer fallback on 429/network error. Pagination not tested: retailer-sources.ts doesn't implement pagination yet, nothing to test |
 | Testing (stretch) | Notification dedup tests | Claude | done | `tests/stretch.test.mjs` — same deal/session/observation doesn't double-alert; below-50% doesn't alert |
 | Testing (stretch) | Spoonacular failure/fallback tests | Claude | done | `tests/stretch.test.mjs` — 503 and network-error both fall back to `source: "fixture"` |
-| Testing (stretch) | Push subscription renewal tests | Codex | todo | |
+| Testing (stretch) | Push subscription renewal tests | — | out-of-scope | push notifications descoped for this submission, see row above |
 | Docs | README sections (install, env vars, db, fixtures, providers, session model, arch diagram, testing, limitations) | — | done | present in `README.md`, re-check for drift as features land |
 | Docs | 7-slide deck | — | todo | not a code artifact — flag to the user, don't build in-repo unless asked |
 
@@ -148,3 +148,36 @@ Real work landed, not just board updates.
   malformed-price/adapter-fallback, notification dedup, Spoonacular
   failure-fallback. Full suite: 13/13 passing. Remaining open items: push
   subscription renewal tests (Codex), the 7-slide deck (not a code artifact).
+
+- **2026-07-22, Claude**: User set a tonight deadline; agreed scope: skip push
+  notifications (email alerts already satisfy the must-have), leave the Qwen key
+  unwired, get the app verified in an actual browser before demo. Ran `npm run
+  start` (production build) since `vinext dev` is broken locally — confirmed it
+  works, the issue is specific to the dev-server's workerd spawn, not the build.
+  Did a full click-through in Chrome: onboarding/preferences modal (postcode,
+  email, pantry, retailers, dietary, alert opt-in) saves correctly; watchlist
+  add/remove works; "Send a test alert" fires `POST /api/notifications/test` and
+  gets a 200 (confirmed via network tab) but shows no success/error toast in the
+  UI — minor UX gap, Codex's lane, not fixed tonight; recipe card and timing lab
+  ("3×2 runs to unlock your proof") both match spec. **Found and fixed a real bug**
+  automated tests couldn't catch: the dashboard header hardcoded
+  `"SATURDAY, JULY 25 · {profile.postcode}"` in `app/page.tsx`, which visually
+  read as a date ending in a fake "year" (2033, actually the postcode). Replaced
+  with a real `toLocaleDateString()` call and relabeled the postcode as
+  "Near {postcode}". `npm test` still 13/13 after the fix.
+  **Also**: `app/chatgpt-auth.ts` (dead code, deleted in an earlier session) came
+  back in Codex's big commit `cfd4f91` — Codex, this file is genuinely unused
+  (grepped, zero references anywhere) and the user explicitly asked for it gone;
+  please don't regenerate it again in a future pass, the template's presence in
+  your working copy is stale.
+  **Reminder for demo day**: the fixture-mode store is in-memory
+  (`globalThis.__dealChefStore`) — restarting the server wipes watchlist/profile
+  state. Do the live demo in one continuous server session, don't restart
+  mid-demo.
+  Descoped push notifications and their stretch tests in the Task Board
+  (marked `out-of-scope`, not left as dangling `todo`) per the user's decision.
+  Still open: the 3×3 real timed-benchmark runs (inherently a human task, handed
+  to the user — see plan file `transient-wishing-lake.md`), and the 7-slide deck
+  (Codex appears to have started on this per a `.gitignore` change allowlisting
+  `outputs/dealchef-hackathon-deck.pptx` — that's outside SPEC.md's scope note
+  that the deck isn't a code artifact, but not blocking anything, leaving it alone).
