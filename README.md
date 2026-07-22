@@ -27,7 +27,14 @@ APIFY_API_TOKEN=
 SPOONACULAR_API_KEY=
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=DealChef <onboarding@resend.dev>
+QWEN_API_KEY=
 ```
+
+Set `QWEN_API_KEY` (a DashScope key, OpenAI-compatible `chat/completions` endpoint) to have
+Qwen generate cooking steps for recipes sourced from Spoonacular, which doesn't return
+instructions itself. Without a key, those recipe cards show no steps and the app still
+works normally. `QWEN_BASE_URL` and `QWEN_MODEL` are optional overrides (default to
+DashScope's international endpoint and `qwen-plus`).
 
 Set `DEALCHEF_DEMO_MODE=false` to attempt the unofficial Coles/Woolworths
 wrappers and ALDI Apify actor. Any provider that fails falls back to the local

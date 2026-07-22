@@ -181,3 +181,21 @@ Real work landed, not just board updates.
   (Codex appears to have started on this per a `.gitignore` change allowlisting
   `outputs/dealchef-hackathon-deck.pptx` — that's outside SPEC.md's scope note
   that the deck isn't a code artifact, but not blocking anything, leaving it alone).
+
+- **2026-07-22, Claude**: User asked to make the previously-unwired `QWEN_API_KEY`
+  actually usable and to remove ChatGPT/OpenAI leftovers. Audited every file
+  mentioning "openai"/"chatgpt"/"gpt" in the repo (`README.md`, `vite.config.ts`,
+  `db/index.ts`, `build/sites-vite-plugin.ts`, this file): all remaining hits are
+  the functional hosting/deploy config (`.openai/hosting.json` — project ID + D1
+  binding for the live demo) or historical log entries about the already-deleted
+  `app/chatgpt-auth.ts`; user confirmed (via question) to leave that hosting infra
+  and the `chatgpt.site` live-demo URL alone rather than break deploys — there was
+  nothing left to remove beyond what was already cleaned up last session. Wired
+  Qwen into `lib/recipes.ts`: Spoonacular's `findByIngredients` never returns
+  cooking steps, so `generateInstructionsWithQwen()` now calls DashScope's
+  OpenAI-compatible `chat/completions` endpoint (model `qwen-plus` by default,
+  overridable via `QWEN_MODEL`/`QWEN_BASE_URL`) to fill `instructions` for
+  Spoonacular-sourced recipes only; no-op (empty array, no error) if
+  `QWEN_API_KEY` is unset or the call fails, so fixture-mode and offline demos are
+  unaffected. Documented `QWEN_API_KEY` in `.env.example` and `README.md`.
+  `npm run lint`, `npm test` (13/13), and `npm run build` all pass.
